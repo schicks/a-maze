@@ -1,5 +1,6 @@
 mod netcode;
 mod player;
+mod input;
 
 use bevy::{prelude::*};
 
