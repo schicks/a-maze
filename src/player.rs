@@ -2,11 +2,17 @@ use bevy::{
     prelude::*,
     sprite::{Sprite, SpriteBundle},
 };
+use bevy_ggrs::Rollback;
+use ggrs::InputStatus;
+
+use crate::{domain::AppState, input::InputSet};
 
 #[derive(Component)]
-pub struct Player;
+pub struct Player {
+    handle: usize,
+}
 
-pub fn spawn_player(mut commands: Commands) {
+fn spawn_player(mut commands: Commands) {
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -16,34 +22,41 @@ pub fn spawn_player(mut commands: Commands) {
             },
             ..Default::default()
         })
-        .insert(Player);
+        .insert(Player { handle: 0 });
 }
 
+// rollback enabled systems need to be set up by netcode.
 pub fn move_player(
-    keys: Res<Input<KeyCode>>,
-    mut player_query: Query<&mut Transform, With<Player>>,
+    inputs: Res<Vec<(InputSet, InputStatus)>>,
+    mut query: Query<(&mut Transform, &Player), With<Rollback>>,
 ) {
-    let mut direction = Vec2::ZERO;
-    if keys.any_pressed([KeyCode::Up, KeyCode::W]) {
-        direction.y += 1.;
-    }
-    if keys.any_pressed([KeyCode::Down, KeyCode::S]) {
-        direction.y -= 1.;
-    }
-    if keys.any_pressed([KeyCode::Right, KeyCode::D]) {
-        direction.x += 1.;
-    }
-    if keys.any_pressed([KeyCode::Left, KeyCode::A]) {
-        direction.x -= 1.;
-    }
-    if direction == Vec2::ZERO {
-        return;
-    }
+    for (mut transform, player) in query.iter_mut() {
+        let input = inputs[player.handle as usize].0;
+        let mut delta = Vec2::ZERO;
+        if input.contains(InputSet::UP) {
+            delta.y += 1.;
+        }
+        if input.contains(InputSet::DOWN) {
+            delta.y -= 1.;
+        }
+        if input.contains(InputSet::DOWN_RIGHT) {
+            delta.x += 1.;
+        }
+        if input.contains(InputSet::DOWN_LEFT) {
+            delta.x -= 1.;
+        }
+        if delta == Vec2::ZERO {
+            return;
+        }
 
-    let move_speed = 0.13;
-    let move_delta = (direction * move_speed).extend(0.);
+        let move_speed = 0.13;
+        transform.translation += (delta * move_speed).extend(0.);
+    }
+}
 
-    for mut transform in player_query.iter_mut() {
-        transform.translation += move_delta;
+pub struct PlayerPlugin;
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system_set(SystemSet::on_enter(AppState::InGame).with_system(spawn_player));
     }
 }

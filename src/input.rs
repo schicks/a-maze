@@ -19,21 +19,21 @@ impl InputSet {
     // These are isolated input representations. It's important that they only have one positive bit.
     // This also means that we are limited to 8 inputs for a u8, 16 for u16, etc.
     // 00000000
-    const EMPTY: InputSet = InputSet(0);
+    pub const EMPTY: InputSet = InputSet(0);
     // 00000001
-    const UP_RIGHT: InputSet = InputSet(1 << 0);
+    pub const UP_RIGHT: InputSet = InputSet(1 << 0);
     // 00000010
-    const UP: InputSet = InputSet(1 << 1);
+    pub const UP: InputSet = InputSet(1 << 1);
     // 00000100
-    const UP_LEFT: InputSet = InputSet(1 << 2);
+    pub const UP_LEFT: InputSet = InputSet(1 << 2);
     // 00001000
-    const DOWN_LEFT: InputSet = InputSet(1 << 3);
+    pub const DOWN_LEFT: InputSet = InputSet(1 << 3);
     // 00010000
-    const DOWN: InputSet = InputSet(1 << 4);
+    pub const DOWN: InputSet = InputSet(1 << 4);
     // 00100000
-    const DOWN_RIGHT: InputSet = InputSet(1 << 5);
+    pub const DOWN_RIGHT: InputSet = InputSet(1 << 5);
     // 01000000
-    const INTERACT: InputSet = InputSet(1 << 6);
+    pub const INTERACT: InputSet = InputSet(1 << 6);
 
     pub fn contains(self, input: InputSet) -> bool {
         /*
@@ -72,14 +72,13 @@ const KEYMAP: [(KeyCode, InputSet); 7] = [
     (KeyCode::Return, InputSet::INTERACT),
 ];
 
-pub fn input(_: In<PlayerHandle>, keys: Res<Input<KeyCode>>) -> Vec<InputSet> {
-    let folded = KEYMAP.iter().fold(InputSet::EMPTY, |acc, a| {
+pub fn input(_: In<PlayerHandle>, keys: Res<Input<KeyCode>>) -> InputSet {
+    KEYMAP.iter().fold(InputSet::EMPTY, |acc, a| {
         let (key, i) = a;
         if keys.pressed(*key) {
             acc | *i
         } else {
             acc
         }
-    });
-    vec![folded]
+    })
 }
